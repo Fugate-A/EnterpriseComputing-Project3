@@ -17,7 +17,6 @@ import javax.swing.table.DefaultTableModel;
 import java.sql.*;
 import java.util.Properties;
 import java.io.InputStream;
-import java.io.IOException;
 
 public class project3 extends JFrame {
     private JTextArea commandArea;
@@ -155,30 +154,49 @@ public class project3 extends JFrame {
     }
 
     private void loadPropertiesOptions() {
+        // Database properties files
         dbSelector.addItem("project3.properties");
         dbSelector.addItem("bikedb.properties");
 
+        // User properties files
         userSelector.addItem("root.properties");
         userSelector.addItem("client1.properties");
         userSelector.addItem("client2.properties");
-        userSelector.addItem("project3app.properties");
     }
 
-    private void connectToDatabase(String username, String password, String propertiesFile) {
+    private void connectToDatabase(String enteredUsername, String enteredPassword, String dbPropertiesFile, String userPropertiesFile) {
         try {
-            Properties props = new Properties();
-            InputStream input = getClass().getResourceAsStream("/Project3Pack/" + propertiesFile);
-            if (input == null) {
-                JOptionPane.showMessageDialog(this, "Error: Properties file not found", "Connection Error", JOptionPane.ERROR_MESSAGE);
+            // Load database properties
+            Properties dbProps = new Properties();
+            InputStream dbInput = getClass().getResourceAsStream("/Project3Pack/" + dbPropertiesFile);
+            if (dbInput == null) {
+                JOptionPane.showMessageDialog(this, "Error: Database properties file not found", "Connection Error", JOptionPane.ERROR_MESSAGE);
                 return;
             }
-            props.load(input);
-            String url = props.getProperty("db.url");
-            String driver = props.getProperty("db.driver");
+            dbProps.load(dbInput);
+            String dbUrl = dbProps.getProperty("db.url");
+            String dbDriver = dbProps.getProperty("db.driver");
 
-            Class.forName(driver);
-            connection = DriverManager.getConnection(url, username, password);
-            connectionStatusLabel.setText("CONNECTED TO: " + url);
+            // Load user properties
+            Properties userProps = new Properties();
+            InputStream userInput = getClass().getResourceAsStream("/Project3Pack/" + userPropertiesFile);
+            if (userInput == null) {
+                JOptionPane.showMessageDialog(this, "Error: User properties file not found", "Connection Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            userProps.load(userInput);
+            String storedUsername = userProps.getProperty("db.username");
+            String storedPassword = userProps.getProperty("db.password");
+
+            // Verify username and password match properties file
+            if (!enteredUsername.equals(storedUsername) || !enteredPassword.equals(storedPassword)) {
+                JOptionPane.showMessageDialog(this, "Error: Incorrect username or password", "Authentication Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            Class.forName(dbDriver);
+            connection = DriverManager.getConnection(dbUrl, enteredUsername, enteredPassword);
+            connectionStatusLabel.setText("CONNECTED TO: " + dbUrl);
             connectionStatusLabel.setBackground(Color.YELLOW);
             connectionStatusLabel.setForeground(Color.BLACK);
         } catch (Exception e) {
@@ -237,7 +255,7 @@ public class project3 extends JFrame {
 
     private class ConnectListener implements ActionListener {
         public void actionPerformed(ActionEvent e) {
-            connectToDatabase(usernameField.getText(), passwordField.getText(), dbSelector.getSelectedItem().toString());
+            connectToDatabase(usernameField.getText(), passwordField.getText(), dbSelector.getSelectedItem().toString(), userSelector.getSelectedItem().toString());
         }
     }
 
