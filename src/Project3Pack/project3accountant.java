@@ -112,7 +112,7 @@ public class project3accountant extends JFrame
         connectionStatusLabel.setOpaque(true);
         connectionStatusLabel.setBackground(Color.BLACK);
         connectionStatusLabel.setForeground(Color.RED);
-        connectionStatusLabel.setBounds(20, 250, 320, 35);
+        connectionStatusLabel.setBounds(20, 290, 640, 35);
 
         resultsTable = new JTable(new DefaultTableModel());
         resultsTable.setBorder(null);
