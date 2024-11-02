@@ -3,7 +3,7 @@ Name: Andrew Fugate
 Course: CNT 4714 Fall 2024
 Assignment title: Project 3 – A Two-tier Client-Server Application
 Date: November 3, 2024
-Class: project3.java
+Class: project3accountant.java
 */
 
 package Project3Pack;
@@ -18,13 +18,11 @@ import java.sql.*;
 import java.util.Properties;
 import java.io.InputStream;
 
-public class project3 extends JFrame
+public class project3accountant extends JFrame
 {
     private JTextArea commandArea;
     private JTextField usernameField;
     private JPasswordField passwordField;
-    private JComboBox<String> dbSelector;
-    private JComboBox<String> userSelector;
     private JButton connectButton;
     private JButton executeButton;
     private JButton clearCommandButton;
@@ -36,97 +34,91 @@ public class project3 extends JFrame
     private JScrollPane resultScrollPane;
     private Connection connection;
 
-    public project3()
+    public project3accountant()
     {
         setupGUI();
-        loadPropertiesOptions();
     }
 
     private void setupGUI()
     {
-        setTitle("SQL Client Application");
+        setTitle("SQL Accountant Application");
         setSize(850, 650);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(null);
 
-        //Connection Details Label
         JLabel connectionLabel = new JLabel("Connection Details");
         connectionLabel.setForeground(Color.blue);
         connectionLabel.setBounds(20, 10, 200, 25);
-        
-        //SQL Command Label
+
         JLabel commandLabel = new JLabel("Enter SQL Command");
         commandLabel.setForeground(Color.blue);
         commandLabel.setBounds(350, 10, 200, 25);
-        
-        //Username and Password Feilds
+
         JLabel usernameLabel = new JLabel("Username:");
         usernameLabel.setBounds(20, 40, 100, 25);
-        usernameField = new JTextField(10);
+        usernameField = new JTextField("theaccountant");
         usernameField.setBounds(130, 40, 150, 25);
-        
+        usernameField.setEditable(false);
+
         JLabel passwordLabel = new JLabel("Password:");
         passwordLabel.setBounds(20, 80, 100, 25);
-        passwordField = new JPasswordField(10);
+        passwordField = new JPasswordField("theaccountant");
         passwordField.setBounds(130, 80, 150, 25);
-        
-        //Database and User Selection
-        JLabel dbSelectorLabel = new JLabel("Properties File:");
-        dbSelectorLabel.setBounds(20, 120, 100, 25);
-        dbSelector = new JComboBox<>();
-        dbSelector.setBounds(130, 120, 150, 25);
-        
-        JLabel userSelectorLabel = new JLabel("User:");
-        userSelectorLabel.setBounds(20, 160, 100, 25);
-        userSelector = new JComboBox<>();
-        userSelector.setBounds(130, 160, 150, 25);
-        
-        //Buttons
+        passwordField.setEditable(false);
+
+        JLabel dbSelectorLabel = new JLabel("DB URL Properties");
+        dbSelectorLabel.setBounds(20, 120, 150, 25);
+        JTextField dbField = new JTextField("operationslog.properties");
+        dbField.setBounds(130, 120, 150, 25);
+        dbField.setEditable(false);
+
+        JLabel userSelectorLabel = new JLabel("User Properties");
+        userSelectorLabel.setBounds(20, 160, 150, 25);
+        JTextField userField = new JTextField("theaccountant.properties");
+        userField.setBounds(130, 160, 150, 25);
+        userField.setEditable(false);
+
         connectButton = new JButton("Connect");
         connectButton.setBounds(20, 200, 120, 35);
         connectButton.setBackground(Color.GREEN);
-        
+
         disconnectButton = new JButton("Disconnect");
         disconnectButton.setBounds(150, 200, 130, 35);
         disconnectButton.setBackground(Color.RED);
-        
+
         clearCommandButton = new JButton("Clear Command");
         clearCommandButton.setBounds(350, 250, 150, 35);
         clearCommandButton.setBackground(Color.YELLOW);
-        
+
         clearResultButton = new JButton("Clear Results");
         clearResultButton.setBounds(510, 250, 150, 35);
         clearResultButton.setBackground(Color.YELLOW);
-        
+
         executeButton = new JButton("Execute");
         executeButton.setBounds(670, 250, 130, 35);
         executeButton.setBackground(Color.CYAN);
-        
+
         closeButton = new JButton("Close");
         closeButton.setBounds(670, 290, 130, 35);
         closeButton.setBackground(Color.PINK);
-        
-        //Command Area
+
         commandArea = new JTextArea(5, 40);
         commandArea.setLineWrap(true);
         commandArea.setWrapStyleWord(true);
         JScrollPane commandScrollPane = new JScrollPane(commandArea);
         commandScrollPane.setBounds(350, 40, 450, 180);
-        
-        //Connection Label
+
         connectionStatusLabel = new JLabel("NO CONNECTION ESTABLISHED");
         connectionStatusLabel.setOpaque(true);
         connectionStatusLabel.setBackground(Color.BLACK);
         connectionStatusLabel.setForeground(Color.RED);
         connectionStatusLabel.setBounds(20, 250, 320, 35);
-        
-        //Results
+
         resultsTable = new JTable(new DefaultTableModel());
         resultsTable.setBorder(null);
         resultScrollPane = new JScrollPane(resultsTable);
         resultScrollPane.setBounds(20, 350, 780, 230);
-        
-        //jframe comps
+
         add(connectionLabel);
         add(commandLabel);
         add(usernameLabel);
@@ -134,9 +126,9 @@ public class project3 extends JFrame
         add(passwordLabel);
         add(passwordField);
         add(dbSelectorLabel);
-        add(dbSelector);
+        add(dbField);
         add(userSelectorLabel);
-        add(userSelector);
+        add(userField);
         add(connectButton);
         add(disconnectButton);
         add(clearCommandButton);
@@ -146,7 +138,7 @@ public class project3 extends JFrame
         add(commandScrollPane);
         add(connectionStatusLabel);
         add(resultScrollPane);
-        
+
         connectButton.addActionListener(new ConnectListener());
         executeButton.addActionListener(new ExecuteListener());
         clearCommandButton.addActionListener(e -> commandArea.setText(""));
@@ -155,197 +147,152 @@ public class project3 extends JFrame
         closeButton.addActionListener(e -> System.exit(0));
     }
 
-    private void loadPropertiesOptions()
+    private void connectToDatabase()
     {
-        //db properties files
-        dbSelector.addItem("project3.properties");
-        dbSelector.addItem("bikedb.properties");
-
-        //User property files
-        userSelector.addItem("root.properties");
-        userSelector.addItem("client1.properties");
-        userSelector.addItem("client2.properties");
-    }
-
-    private void connectToDatabase(String enteredUsername, String enteredPassword, String dbPropertiesFile, String userPropertiesFile)
-    {
+        String enteredPassword = new String(passwordField.getPassword());
         try
         {
             Properties dbProps = new Properties();
-            InputStream dbInput = getClass().getResourceAsStream("/Project3Pack/" + dbPropertiesFile);
-            
-            if( dbInput == null )
+            InputStream dbInput = getClass().getResourceAsStream("/Project3Pack/operationslog.properties");
+
+            if (dbInput == null)
             {
                 JOptionPane.showMessageDialog(this, "Error: Database properties file not found", "Connection Error", JOptionPane.ERROR_MESSAGE);
                 return;
             }
-            
+
             dbProps.load(dbInput);
             String dbUrl = dbProps.getProperty("db.url");
             String dbDriver = dbProps.getProperty("db.driver");
 
             Properties userProps = new Properties();
-            InputStream userInput = getClass().getResourceAsStream("/Project3Pack/" + userPropertiesFile);
-            
-            if( userInput == null )
+            InputStream userInput = getClass().getResourceAsStream("/Project3Pack/theaccountant.properties");
+
+            if (userInput == null)
             {
                 JOptionPane.showMessageDialog(this, "Error: User properties file not found", "Connection Error", JOptionPane.ERROR_MESSAGE);
                 return;
             }
-            
+
             userProps.load(userInput);
-            String storedUsername = userProps.getProperty("db.username");
             String storedPassword = userProps.getProperty("db.password");
 
-            //verify against storeed
-            if( !enteredUsername.equals( storedUsername ) || !enteredPassword.equals( storedPassword ) )
+            if (!enteredPassword.equals(storedPassword))
             {
-                JOptionPane.showMessageDialog( this, "Error: Incorrect username or password. Credentials Do Not Match Properties File!", "Authentication Error", JOptionPane.ERROR_MESSAGE );
+                JOptionPane.showMessageDialog(this, "Error: Incorrect password", "Authentication Error", JOptionPane.ERROR_MESSAGE);
                 return;
             }
 
             Class.forName(dbDriver);
-            connection = DriverManager.getConnection(dbUrl, enteredUsername, enteredPassword);
+            connection = DriverManager.getConnection(dbUrl, "theaccountant", enteredPassword);
             connectionStatusLabel.setText("CONNECTED TO: " + dbUrl);
             connectionStatusLabel.setBackground(Color.YELLOW);
             connectionStatusLabel.setForeground(Color.BLACK);
         }
-        
-        catch( Exception e )
+        catch (Exception e)
         {
-            JOptionPane.showMessageDialog( this, "Error: " + e.getMessage(), "Connection Error", JOptionPane.ERROR_MESSAGE );
+            JOptionPane.showMessageDialog(this, "Error: " + e.getMessage(), "Connection Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
-    private void executeSQL( String sql )
+    private void executeSQL(String sql)
     {
-        if( connection == null )
+        if (connection == null)
         {
-            JOptionPane.showMessageDialog( this, "No active connection.", "Execution Error", JOptionPane.ERROR_MESSAGE );
-            
+            JOptionPane.showMessageDialog(this, "No active connection.", "Execution Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
 
-        try( PreparedStatement preparedStatement = connection.prepareStatement( sql ) )
+        try (PreparedStatement preparedStatement = connection.prepareStatement(sql))
         {
             boolean isResultSet = preparedStatement.execute();
 
-            if( isResultSet )
+            if (isResultSet)
             {
                 ResultSet rs = preparedStatement.getResultSet();
-                
                 displayResultSet(rs);
             }
-            
             else
             {
-                int updateCount = preparedStatement.getUpdateCount();
-                JOptionPane.showMessageDialog(this, "Executed successfully, affected rows: " + updateCount, "Execution Success", JOptionPane.INFORMATION_MESSAGE);
-                
-                //update daata
-                if( sql.trim().toUpperCase().startsWith( "INSERT" ) || sql.trim().toUpperCase().startsWith( "UPDATE" ) || sql.trim().toUpperCase().startsWith( "DELETE" ) )
-                {
-                    refreshTableData();
-                }
+                JOptionPane.showMessageDialog(this, "Selection only permitted", "Execution Error", JOptionPane.ERROR_MESSAGE);
             }
-            
         }
-        
-        catch( SQLException e )
+        catch (SQLException e)
         {
-            JOptionPane.showMessageDialog( this, "Error executing SQL: " + e.getMessage(), "Execution Error", JOptionPane.ERROR_MESSAGE );
+            JOptionPane.showMessageDialog(this, "Error executing SQL: " + e.getMessage(), "Execution Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
-    private void refreshTableData()
-    {
-        try( Statement stmt = connection.createStatement(); ResultSet rs = stmt.executeQuery( "SELECT * FROM riders" ) )
-        {
-            displayResultSet( rs );
-        }
-        
-        catch( SQLException e )
-        {
-            JOptionPane.showMessageDialog( this, "Error refreshing table data: " + e.getMessage(), "Refresh Error", JOptionPane.ERROR_MESSAGE );
-        }
-    }
-
-    private void displayResultSet( ResultSet rs ) throws SQLException
+    private void displayResultSet(ResultSet rs) throws SQLException
     {
         DefaultTableModel tableModel = new DefaultTableModel();
         ResultSetMetaData metaData = rs.getMetaData();
         int columnCount = metaData.getColumnCount();
 
-        for( int i = 1; i <= columnCount; i++ )
+        for (int i = 1; i <= columnCount; i++)
         {
-            tableModel.addColumn( metaData.getColumnName( i ) );
+            tableModel.addColumn(metaData.getColumnName(i));
         }
 
-        while( rs.next() )
+        while (rs.next())
         {
-            Object[] row = new Object[ columnCount ];
-            
-            for( int i = 1; i <= columnCount; i++ )
+            Object[] row = new Object[columnCount];
+            for (int i = 1; i <= columnCount; i++)
             {
-                row[ i - 1 ] = rs.getObject( i );
+                row[i - 1] = rs.getObject(i);
             }
-            
-            tableModel.addRow( row );
+            tableModel.addRow(row);
         }
 
-        resultsTable.setModel( tableModel );
+        resultsTable.setModel(tableModel);
 
         DefaultTableCellRenderer headerRenderer = new DefaultTableCellRenderer();
-        
-        headerRenderer.setHorizontalAlignment( SwingConstants.CENTER );
-        
-        for( int i = 0; i < resultsTable.getColumnModel().getColumnCount(); i++ ) 
+        headerRenderer.setHorizontalAlignment(SwingConstants.CENTER);
+        for (int i = 0; i < resultsTable.getColumnModel().getColumnCount(); i++)
         {
-            resultsTable.getColumnModel().getColumn( i ).setHeaderRenderer( headerRenderer );
+            resultsTable.getColumnModel().getColumn(i).setHeaderRenderer(headerRenderer);
         }
     }
 
     private class ConnectListener implements ActionListener
     {
-        public void actionPerformed( ActionEvent e )
+        public void actionPerformed(ActionEvent e)
         {
-            connectToDatabase( usernameField.getText(), new String( passwordField.getPassword() ), dbSelector.getSelectedItem().toString(), userSelector.getSelectedItem().toString() );
+            connectToDatabase();
         }
     }
 
     private class ExecuteListener implements ActionListener
     {
-        public void actionPerformed( ActionEvent e )
+        public void actionPerformed(ActionEvent e)
         {
-            executeSQL( commandArea.getText() );
+            executeSQL(commandArea.getText());
         }
     }
 
     private class DisconnectListener implements ActionListener
     {
-        public void actionPerformed( ActionEvent e )
+        public void actionPerformed(ActionEvent e)
         {
             try
             {
-                if( connection != null && !connection.isClosed() )
+                if (connection != null && !connection.isClosed())
                 {
                     connection.close();
-                    
                     connectionStatusLabel.setText("NO CONNECTION ESTABLISHED");
                     connectionStatusLabel.setBackground(Color.BLACK);
                     connectionStatusLabel.setForeground(Color.RED);
                 }
             }
-            
-            catch( SQLException ex )
+            catch (SQLException ex)
             {
-                JOptionPane.showMessageDialog( project3.this, "Error disconnecting: " + ex.getMessage(), "Disconnection Error", JOptionPane.ERROR_MESSAGE );
+                JOptionPane.showMessageDialog(project3accountant.this, "Error disconnecting: " + ex.getMessage(), "Disconnection Error", JOptionPane.ERROR_MESSAGE);
             }
         }
     }
 
     public static void main(String[] args)
     {
-        SwingUtilities.invokeLater(() -> new project3().setVisible( true ) );
+        SwingUtilities.invokeLater(() -> new project3accountant().setVisible(true));
     }
 }
