@@ -21,7 +21,7 @@ import java.io.InputStream;
 public class project3 extends JFrame {
     private JTextArea commandArea;
     private JTextField usernameField;
-    private JTextField passwordField;
+    private JPasswordField passwordField; // Changed to JPasswordField for hidden text
     private JComboBox<String> dbSelector;
     private JComboBox<String> userSelector;
     private JButton connectButton;
@@ -64,7 +64,7 @@ public class project3 extends JFrame {
         
         JLabel passwordLabel = new JLabel("Password:");
         passwordLabel.setBounds(20, 80, 100, 25);
-        passwordField = new JTextField(10);
+        passwordField = new JPasswordField(10); // Hidden text for password
         passwordField.setBounds(130, 80, 150, 25);
         
         // Database and User Selection with Labels
@@ -220,8 +220,6 @@ public class project3 extends JFrame {
                 int updateCount = preparedStatement.getUpdateCount();
                 JOptionPane.showMessageDialog(this, "Executed successfully, affected rows: " + updateCount, "Execution Success", JOptionPane.INFORMATION_MESSAGE);
             }
-
-            commandArea.setText("");
         } catch (SQLException e) {
             JOptionPane.showMessageDialog(this, "Error executing SQL: " + e.getMessage(), "Execution Error", JOptionPane.ERROR_MESSAGE);
         }
@@ -255,7 +253,7 @@ public class project3 extends JFrame {
 
     private class ConnectListener implements ActionListener {
         public void actionPerformed(ActionEvent e) {
-            connectToDatabase(usernameField.getText(), passwordField.getText(), dbSelector.getSelectedItem().toString(), userSelector.getSelectedItem().toString());
+            connectToDatabase(usernameField.getText(), new String(passwordField.getPassword()), dbSelector.getSelectedItem().toString(), userSelector.getSelectedItem().toString());
         }
     }
 
