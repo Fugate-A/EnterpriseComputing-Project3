@@ -34,6 +34,7 @@ public class project3 extends JFrame {
     private JTable resultsTable;
     private JScrollPane resultScrollPane;
     private Connection connection;
+    private Connection logConnection;
 
     public project3() {
         setupGUI();
@@ -188,6 +189,24 @@ public class project3 extends JFrame {
             connectionStatusLabel.setText("CONNECTED TO: " + dbUrl);
             connectionStatusLabel.setBackground(Color.YELLOW);
             connectionStatusLabel.setForeground(Color.BLACK);
+
+            // Establish log connection with project3app credentials
+            Properties logProps = new Properties();
+            InputStream logInput = getClass().getResourceAsStream("/Project3Pack/project3app.properties");
+
+            if (logInput == null) {
+                JOptionPane.showMessageDialog(this, "Error: Logging properties file not found", "Logging Connection Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            logProps.load(logInput);
+            String logUrl = logProps.getProperty("db.url");
+            String logDriver = logProps.getProperty("db.driver");
+            String logUser = logProps.getProperty("db.username");
+            String logPassword = logProps.getProperty("db.password");
+
+            Class.forName(logDriver);
+            logConnection = DriverManager.getConnection(logUrl, logUser, logPassword);
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this, "Error: " + e.getMessage(), "Connection Error", JOptionPane.ERROR_MESSAGE);
         }
@@ -205,7 +224,7 @@ public class project3 extends JFrame {
             if (isResultSet) {
                 ResultSet rs = preparedStatement.getResultSet();
                 displayResultSet(rs);
-                logOperation("queries"); // Log SELECT queries
+                logOperation("queries");
             } else {
                 int updateCount = preparedStatement.getUpdateCount();
                 JOptionPane.showMessageDialog(this, "Executed successfully, affected rows: " + updateCount, "Execution Success", JOptionPane.INFORMATION_MESSAGE);
@@ -213,20 +232,12 @@ public class project3 extends JFrame {
                 if (sql.trim().toUpperCase().startsWith("INSERT") || 
                     sql.trim().toUpperCase().startsWith("UPDATE") || 
                     sql.trim().toUpperCase().startsWith("DELETE")) {
-                    logOperation("updates"); // Log INSERT, UPDATE, DELETE as updates
+                    logOperation("updates");
                 }
             }
 
         } catch (SQLException e) {
             JOptionPane.showMessageDialog(this, "Error executing SQL: " + e.getMessage(), "Execution Error", JOptionPane.ERROR_MESSAGE);
-        }
-    }
-
-    private void refreshTableData() {
-        try (Statement stmt = connection.createStatement(); ResultSet rs = stmt.executeQuery("SELECT * FROM riders")) {
-            displayResultSet(rs);
-        } catch (SQLException e) {
-            JOptionPane.showMessageDialog(this, "Error refreshing table data: " + e.getMessage(), "Refresh Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -257,61 +268,35 @@ public class project3 extends JFrame {
     }
 
     private void logOperation(String operationType) {
+        if (logConnection == null) {
+            JOptionPane.showMessageDialog(this, "Logging connection not established.", "Logging Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
         try {
-            // Load the selected user properties
-            Properties userProps = new Properties();
-            String userPropertiesFile = "/Project3Pack/" + userSelector.getSelectedItem().toString();
-            InputStream userInput = getClass().getResourceAsStream(userPropertiesFile);
+            logConnection.setAutoCommit(false);
 
-            if (userInput == null) {
-                JOptionPane.showMessageDialog(this, "Error: User properties file not found", "Logging Error", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
+            try (PreparedStatement stmt = logConnection.prepareStatement(
+                    "UPDATE operationscount SET num_" + operationType + " = num_" + operationType + " + 1 WHERE login_username = ?")) {
+                stmt.setString(1, usernameField.getText());
+                int rowsAffected = stmt.executeUpdate();
 
-            userProps.load(userInput);
-            String logUser = userProps.getProperty("db.username");
-            String logPassword = userProps.getProperty("db.password");
-
-            // Load operations log database URL and driver from operationslog.properties
-            Properties logProps = new Properties();
-            InputStream logInput = getClass().getResourceAsStream("/Project3Pack/operationslog.properties");
-
-            if (logInput == null) {
-                JOptionPane.showMessageDialog(this, "Error: Operations log properties file not found", "Logging Error", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-
-            logProps.load(logInput);
-            String logUrl = logProps.getProperty("db.url");
-            String logDriver = logProps.getProperty("db.driver");
-
-            Class.forName(logDriver);
-            try (Connection logConnection = DriverManager.getConnection(logUrl, logUser, logPassword)) {
-                logConnection.setAutoCommit(false);
-
-                try (PreparedStatement stmt = logConnection.prepareStatement(
-                        "UPDATE operationscount SET num_" + operationType + " = num_" + operationType + " + 1 WHERE login_username = ?")) {
-                    stmt.setString(1, usernameField.getText());
-                    int rowsAffected = stmt.executeUpdate();
-
-                    if (rowsAffected == 0) {
-                        try (PreparedStatement insertStmt = logConnection.prepareStatement(
-                                "INSERT INTO operationscount (login_username, num_queries, num_updates) VALUES (?, ?, ?)")) {
-                            insertStmt.setString(1, usernameField.getText());
-                            insertStmt.setInt(2, operationType.equals("queries") ? 1 : 0);
-                            insertStmt.setInt(3, operationType.equals("updates") ? 1 : 0);
-                            insertStmt.executeUpdate();
-                        }
+                if (rowsAffected == 0) {
+                    try (PreparedStatement insertStmt = logConnection.prepareStatement(
+                            "INSERT INTO operationscount (login_username, num_queries, num_updates) VALUES (?, ?, ?)")) {
+                        insertStmt.setString(1, usernameField.getText());
+                        insertStmt.setInt(2, operationType.equals("queries") ? 1 : 0);
+                        insertStmt.setInt(3, operationType.equals("updates") ? 1 : 0);
+                        insertStmt.executeUpdate();
                     }
                 }
-
-                logConnection.commit();
             }
+
+            logConnection.commit();
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this, "Error logging operation: " + e.getMessage(), "Logging Error", JOptionPane.ERROR_MESSAGE);
         }
     }
-
 
     private class ConnectListener implements ActionListener {
         public void actionPerformed(ActionEvent e) {
@@ -333,6 +318,9 @@ public class project3 extends JFrame {
                     connectionStatusLabel.setText("NO CONNECTION ESTABLISHED");
                     connectionStatusLabel.setBackground(Color.BLACK);
                     connectionStatusLabel.setForeground(Color.RED);
+                }
+                if (logConnection != null && !logConnection.isClosed()) {
+                    logConnection.close();
                 }
             } catch (SQLException ex) {
                 JOptionPane.showMessageDialog(project3.this, "Error disconnecting: " + ex.getMessage(), "Disconnection Error", JOptionPane.ERROR_MESSAGE);
