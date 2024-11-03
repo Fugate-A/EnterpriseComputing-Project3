@@ -1,0 +1,14 @@
+#Part 4: Three Screenshots 
+
+#A: Accountant Specific Application
+#Query1:
+select num_queries
+from operationscount
+where login_username = "root@localhost";
+
+#Query2:
+select * from operationscount;
+
+#B: MySQL Workbench Root Perspective
+#Query:
+select * from operationscount;

@@ -5,9 +5,9 @@ Assignment title: Project 3 – A Two-tier Client-Server Application
 Date: November 3, 2024
 Class: project3.java
 */
-
+//------------------------------------------------------------------------------------------------------------------------
 package Project3Pack;
-
+//------------------------------------------------------------------------------------------------------------------------
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -17,8 +17,9 @@ import javax.swing.table.DefaultTableModel;
 import java.sql.*;
 import java.util.Properties;
 import java.io.InputStream;
-
-public class project3 extends JFrame {
+//------------------------------------------------------------------------------------------------------------------------
+public class project3 extends JFrame
+{
     private JTextArea commandArea;
     private JTextField usernameField;
     private JPasswordField passwordField;
@@ -35,13 +36,15 @@ public class project3 extends JFrame {
     private JScrollPane resultScrollPane;
     private Connection connection;
     private Connection logConnection;
-
-    public project3() {
+  //------------------------------------------------------------------------------------------------------------------------
+    public project3()
+    {
         setupGUI();
         loadPropertiesOptions();
     }
-
-    private void setupGUI() {
+  //------------------------------------------------------------------------------------------------------------------------
+    private void setupGUI()
+    {
         setTitle("SQL Client Application");
         setSize(850, 650);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -143,8 +146,9 @@ public class project3 extends JFrame {
         disconnectButton.addActionListener(new DisconnectListener());
         closeButton.addActionListener(e -> System.exit(0));
     }
-
-    private void loadPropertiesOptions() {
+  //------------------------------------------------------------------------------------------------------------------------
+    private void loadPropertiesOptions()
+    {
         dbSelector.addItem("project3.properties");
         dbSelector.addItem("bikedb.properties");
 
@@ -152,13 +156,16 @@ public class project3 extends JFrame {
         userSelector.addItem("client1.properties");
         userSelector.addItem("client2.properties");
     }
-
-    private void connectToDatabase(String enteredUsername, String enteredPassword, String dbPropertiesFile, String userPropertiesFile) {
-        try {
+  //------------------------------------------------------------------------------------------------------------------------
+    private void connectToDatabase(String enteredUsername, String enteredPassword, String dbPropertiesFile, String userPropertiesFile)
+    {
+        try
+        {
             Properties dbProps = new Properties();
             InputStream dbInput = getClass().getResourceAsStream("/Project3Pack/" + dbPropertiesFile);
 
-            if (dbInput == null) {
+            if (dbInput == null)
+            {
                 JOptionPane.showMessageDialog(this, "Error: Database properties file not found", "Connection Error", JOptionPane.ERROR_MESSAGE);
                 return;
             }
@@ -170,7 +177,8 @@ public class project3 extends JFrame {
             Properties userProps = new Properties();
             InputStream userInput = getClass().getResourceAsStream("/Project3Pack/" + userPropertiesFile);
 
-            if (userInput == null) {
+            if (userInput == null)
+            {
                 JOptionPane.showMessageDialog(this, "Error: User properties file not found", "Connection Error", JOptionPane.ERROR_MESSAGE);
                 return;
             }
@@ -179,7 +187,8 @@ public class project3 extends JFrame {
             String storedUsername = userProps.getProperty("db.username");
             String storedPassword = userProps.getProperty("db.password");
 
-            if (!enteredUsername.equals(storedUsername) || !enteredPassword.equals(storedPassword)) {
+            if (!enteredUsername.equals(storedUsername) || !enteredPassword.equals(storedPassword))
+            {
                 JOptionPane.showMessageDialog(this, "Error: Incorrect username or password. Credentials Do Not Match Properties File!", "Authentication Error", JOptionPane.ERROR_MESSAGE);
                 return;
             }
@@ -194,7 +203,8 @@ public class project3 extends JFrame {
             Properties logProps = new Properties();
             InputStream logInput = getClass().getResourceAsStream("/Project3Pack/project3app.properties");
 
-            if (logInput == null) {
+            if (logInput == null)
+            {
                 JOptionPane.showMessageDialog(this, "Error: Logging properties file not found", "Logging Connection Error", JOptionPane.ERROR_MESSAGE);
                 return;
             }
@@ -207,54 +217,72 @@ public class project3 extends JFrame {
 
             Class.forName(logDriver);
             logConnection = DriverManager.getConnection(logUrl, logUser, logPassword);
-        } catch (Exception e) {
+        }
+        
+        catch (Exception e)
+        {
             JOptionPane.showMessageDialog(this, "Error: " + e.getMessage(), "Connection Error", JOptionPane.ERROR_MESSAGE);
         }
     }
-
-    private void executeSQL(String sql) {
-        if (connection == null) {
+  //------------------------------------------------------------------------------------------------------------------------
+    private void executeSQL(String sql)
+    {
+        if (connection == null)
+        {
             JOptionPane.showMessageDialog(this, "No active connection.", "Execution Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
 
-        try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+        try (PreparedStatement preparedStatement = connection.prepareStatement(sql))
+        {
             boolean isResultSet = preparedStatement.execute();
 
-            if (isResultSet) {
+            if (isResultSet)
+            {
                 ResultSet rs = preparedStatement.getResultSet();
                 displayResultSet(rs);
                 logOperation("queries");
-            } else {
+            }
+            
+            else
+            {
                 int updateCount = preparedStatement.getUpdateCount();
                 JOptionPane.showMessageDialog(this, "Executed successfully, affected rows: " + updateCount, "Execution Success", JOptionPane.INFORMATION_MESSAGE);
 
-                if (sql.trim().toUpperCase().startsWith("INSERT") || 
-                    sql.trim().toUpperCase().startsWith("UPDATE") || 
-                    sql.trim().toUpperCase().startsWith("DELETE")) {
+                if (sql.trim().toUpperCase().startsWith("INSERT") || sql.trim().toUpperCase().startsWith("UPDATE") || sql.trim().toUpperCase().startsWith("DELETE"))
+                {
                     logOperation("updates");
                 }
             }
 
-        } catch (SQLException e) {
+        }
+        
+        catch (SQLException e)
+        {
             JOptionPane.showMessageDialog(this, "Error executing SQL: " + e.getMessage(), "Execution Error", JOptionPane.ERROR_MESSAGE);
         }
     }
-
-    private void displayResultSet(ResultSet rs) throws SQLException {
+  //------------------------------------------------------------------------------------------------------------------------
+    private void displayResultSet(ResultSet rs) throws SQLException
+    {
         DefaultTableModel tableModel = new DefaultTableModel();
         ResultSetMetaData metaData = rs.getMetaData();
         int columnCount = metaData.getColumnCount();
 
-        for (int i = 1; i <= columnCount; i++) {
+        for (int i = 1; i <= columnCount; i++)
+        {
             tableModel.addColumn(metaData.getColumnName(i));
         }
 
-        while (rs.next()) {
+        while (rs.next())
+        {
             Object[] row = new Object[columnCount];
-            for (int i = 1; i <= columnCount; i++) {
+            
+            for (int i = 1; i <= columnCount; i++)
+            {
                 row[i - 1] = rs.getObject(i);
             }
+            
             tableModel.addRow(row);
         }
 
@@ -262,28 +290,34 @@ public class project3 extends JFrame {
 
         DefaultTableCellRenderer headerRenderer = new DefaultTableCellRenderer();
         headerRenderer.setHorizontalAlignment(SwingConstants.CENTER);
-        for (int i = 0; i < resultsTable.getColumnModel().getColumnCount(); i++) {
+        
+        for (int i = 0; i < resultsTable.getColumnModel().getColumnCount(); i++)
+        {
             resultsTable.getColumnModel().getColumn(i).setHeaderRenderer(headerRenderer);
         }
     }
-
-    private void logOperation(String operationType) {
-        if (logConnection == null) {
+  //------------------------------------------------------------------------------------------------------------------------
+    private void logOperation(String operationType)
+    {
+        if (logConnection == null)
+        {
             JOptionPane.showMessageDialog(this, "Logging connection not established.", "Logging Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
 
-        try {
+        try
+        {
             logConnection.setAutoCommit(false);
 
-            try (PreparedStatement stmt = logConnection.prepareStatement(
-                    "UPDATE operationscount SET num_" + operationType + " = num_" + operationType + " + 1 WHERE login_username = ?")) {
+            try (PreparedStatement stmt = logConnection.prepareStatement( "UPDATE operationscount SET num_" + operationType + " = num_" + operationType + " + 1 WHERE login_username = ?"))
+            {
                 stmt.setString(1, usernameField.getText());
                 int rowsAffected = stmt.executeUpdate();
 
-                if (rowsAffected == 0) {
-                    try (PreparedStatement insertStmt = logConnection.prepareStatement(
-                            "INSERT INTO operationscount (login_username, num_queries, num_updates) VALUES (?, ?, ?)")) {
+                if (rowsAffected == 0)
+                {
+                    try (PreparedStatement insertStmt = logConnection.prepareStatement( "INSERT INTO operationscount (login_username, num_queries, num_updates) VALUES (?, ?, ?)"))
+                    {
                         insertStmt.setString(1, usernameField.getText());
                         insertStmt.setInt(2, operationType.equals("queries") ? 1 : 0);
                         insertStmt.setInt(3, operationType.equals("updates") ? 1 : 0);
@@ -293,42 +327,60 @@ public class project3 extends JFrame {
             }
 
             logConnection.commit();
-        } catch (Exception e) {
+        }
+        
+        catch (Exception e)
+        {
             JOptionPane.showMessageDialog(this, "Error logging operation: " + e.getMessage(), "Logging Error", JOptionPane.ERROR_MESSAGE);
         }
     }
-
-    private class ConnectListener implements ActionListener {
-        public void actionPerformed(ActionEvent e) {
+  //------------------------------------------------------------------------------------------------------------------------
+    private class ConnectListener implements ActionListener
+    {
+        public void actionPerformed(ActionEvent e)
+        {
             connectToDatabase(usernameField.getText(), new String(passwordField.getPassword()), dbSelector.getSelectedItem().toString(), userSelector.getSelectedItem().toString());
         }
     }
-
-    private class ExecuteListener implements ActionListener {
-        public void actionPerformed(ActionEvent e) {
+  //------------------------------------------------------------------------------------------------------------------------
+    private class ExecuteListener implements ActionListener
+    {
+        public void actionPerformed(ActionEvent e)
+        {
             executeSQL(commandArea.getText());
         }
     }
-
-    private class DisconnectListener implements ActionListener {
-        public void actionPerformed(ActionEvent e) {
-            try {
-                if (connection != null && !connection.isClosed()) {
+  //------------------------------------------------------------------------------------------------------------------------
+    private class DisconnectListener implements ActionListener
+    {
+        public void actionPerformed(ActionEvent e)
+        {
+            try
+            {
+                if (connection != null && !connection.isClosed())
+                {
                     connection.close();
                     connectionStatusLabel.setText("NO CONNECTION ESTABLISHED");
                     connectionStatusLabel.setBackground(Color.BLACK);
                     connectionStatusLabel.setForeground(Color.RED);
                 }
-                if (logConnection != null && !logConnection.isClosed()) {
+                
+                if (logConnection != null && !logConnection.isClosed())
+                {
                     logConnection.close();
                 }
-            } catch (SQLException ex) {
+            }
+            
+            catch (SQLException ex)
+            {
                 JOptionPane.showMessageDialog(project3.this, "Error disconnecting: " + ex.getMessage(), "Disconnection Error", JOptionPane.ERROR_MESSAGE);
             }
         }
     }
-
-    public static void main(String[] args) {
+  //------------------------------------------------------------------------------------------------------------------------
+    public static void main(String[] args)
+    {
         SwingUtilities.invokeLater(() -> new project3().setVisible(true));
     }
 }
+//------------------------------------------------------------------------------------------------------------------------
